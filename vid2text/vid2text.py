@@ -53,10 +53,9 @@ def store_transcription_info(db_path, video_path, audio_path, transcript_path):
     with sqlite3.connect(db_path) as conn:
         cursor = conn.cursor()
         cursor.execute("""
-                INSERT INTO transcriptions (video_path, audio_path, transcript_path, timestamp)
-                VALUES (?, ?, ?, ?)
-                """, (video_path, audio_path, transcript_path, datetime.now().isoformat())
-        )
+        INSERT INTO transcriptions (video_path, audio_path, transcript_path, timestamp)
+        VALUES (?, ?, ?, ?)
+        """, (video_path, audio_path, transcript_path, datetime.now().isoformat()))
         conn.commit()
 
 
@@ -79,6 +78,20 @@ def update_config():
     update_config()
 
 
+def print_usage():
+    print("""
+Usage: vid2text -v <video_path> [-u]
+
+Options:
+  -v, --video     Path to the input video file.
+  -u, --update    Update configuration settings interactively.
+
+Examples:
+  vid2text -v C:\\path\\to\\video.mp4
+  vid2text -u
+""")
+
+
 def main():
     config = load_config()
 
@@ -89,6 +102,10 @@ def main():
                         help='Update configuration settings')
 
     args = parser.parse_args()
+
+    if not args.video and not args.update:
+        print_usage()
+        return
 
     if args.update:
         update_config()
