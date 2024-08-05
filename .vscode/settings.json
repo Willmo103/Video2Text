@@ -2,6 +2,7 @@
     "iis.configDir": "",
     "flake8.args": [
         "--ignore=E501",
+        "--ignore=F401",
         "--max-line-length=120"
     ],
 }
