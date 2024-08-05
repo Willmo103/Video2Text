@@ -8,23 +8,23 @@ import argparse
 
 CONFIG_PATH = os.path.join(os.path.expanduser(
     "~"), "Videos", "vid2text", "config.yml")
+model = None
 
 
 def load_config():
-    with open(CONFIG_PATH, "r") as f:
+    with open(CONFIG_PATH, 'r') as f:
         return yaml.safe_load(f)
 
 
 def save_config(config):
-    with open(CONFIG_PATH, "w") as f:
+    with open(CONFIG_PATH, 'w') as f:
         yaml.safe_dump(config, f)
 
 
 def init_db(db_path):
     with sqlite3.connect(db_path) as conn:
         cursor = conn.cursor()
-        cursor.execute(
-            """
+        cursor.execute("""
         CREATE TABLE IF NOT EXISTS transcriptions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             video_path TEXT,
@@ -32,8 +32,7 @@ def init_db(db_path):
             transcript_path TEXT,
             timestamp TEXT
         );
-        """
-        )
+        """)
         conn.commit()
 
 
@@ -42,20 +41,21 @@ def extract_audio(video_path, audio_output_path):
 
 
 def transcribe_audio(audio_path):
-    model = whisper.load_model("base")
+    global model
+    if model is None:
+        # Load the model once and keep it in memory
+        model = whisper.load_model("base")
     result = model.transcribe(audio_path)
-    return result["text"]
+    return result['text']
 
 
 def store_transcription_info(db_path, video_path, audio_path, transcript_path):
     with sqlite3.connect(db_path) as conn:
         cursor = conn.cursor()
-        cursor.execute(
-            """
-        INSERT INTO transcriptions (video_path, audio_path, transcript_path, timestamp)
-        VALUES (?, ?, ?, ?)
-        """,
-            (video_path, audio_path, transcript_path, datetime.now().isoformat()),
+        cursor.execute("""
+                INSERT INTO transcriptions (video_path, audio_path, transcript_path, timestamp)
+                VALUES (?, ?, ?, ?)
+                """, (video_path, audio_path, transcript_path, datetime.now().isoformat())
         )
         conn.commit()
 
@@ -72,7 +72,7 @@ def update_config():
         config[key] = new_value
         save_config(config)
         print(f"Updated {key} to {new_value}")
-    elif key.lower() == "exit":
+    elif key.lower() == 'exit':
         return
     else:
         print("Invalid key.")
@@ -83,11 +83,10 @@ def main():
     config = load_config()
 
     parser = argparse.ArgumentParser(
-        description="Video to Text Transcription Tool")
-    parser.add_argument("-v", "--video", help="Path to the input video file")
-    parser.add_argument(
-        "-u", "--update", action="store_true", help="Update configuration settings"
-    )
+        description='Video to Text Transcription Tool')
+    parser.add_argument('-v', '--video', help='Path to the input video file')
+    parser.add_argument('-u', '--update', action='store_true',
+                        help='Update configuration settings')
 
     args = parser.parse_args()
 
@@ -96,29 +95,27 @@ def main():
         return
 
     video_path = args.video
-    output_dir = config["output_directory"]
-    db_path = config["db_path"]
+    output_dir = config['output_directory']
+    db_path = config['db_path']
 
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
     init_db(db_path)
 
-    audio_path = os.path.join(
-        output_dir, os.path.splitext(os.path.basename(video_path))[0] + ".wav"
-    )
-    transcript_path = os.path.join(
-        output_dir, os.path.splitext(os.path.basename(video_path))[0] + ".txt"
-    )
+    audio_path = os.path.join(output_dir, os.path.splitext(
+        os.path.basename(video_path))[0] + '.wav')
+    transcript_path = os.path.join(output_dir, os.path.splitext(
+        os.path.basename(video_path))[0] + '.txt')
 
     extract_audio(video_path, audio_path)
     transcript = transcribe_audio(audio_path)
 
-    with open(transcript_path, "w") as f:
+    with open(transcript_path, 'w') as f:
         f.write(transcript)
 
     store_transcription_info(db_path, video_path, audio_path, transcript_path)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
