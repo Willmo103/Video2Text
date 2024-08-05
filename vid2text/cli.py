@@ -1,6 +1,7 @@
+# vid2text/cli.py
 import argparse
-from vid2text import core, utils
 import os
+from vid2text import core, utils
 
 
 def main():

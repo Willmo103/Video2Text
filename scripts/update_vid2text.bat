@@ -10,20 +10,22 @@ if %errorlevel% NEQ 0 (
     exit /b
 )
 
-REM Define the paths
-set TOOL_DIR=%USERPROFILE%\Videos\vid2text
-set VENV_DIR=%TOOL_DIR%\venv
-set SCRIPT_DIR=%~dp0
+REM Define paths
+set "TOOL_DIR=%USERPROFILE%\Videos\vid2text"
+set "BATCH_FILE=%USERPROFILE%\AppData\Local\Microsoft\WindowsApps\vid2text.bat"
 
-REM Activate the virtual environment
-call "%VENV_DIR%\Scripts\activate"
+REM Deactivate the virtual environment
+call "%TOOL_DIR%\venv\Scripts\deactivate"
 
-REM Update Python packages
-pip install --upgrade ffmpeg-python whisper pyyaml torch torchvision torchaudio
+REM Remove the vid2text directory and all its contents
+rmdir /s /q "%TOOL_DIR%"
+echo "Removed directory: %TOOL_DIR%"
 
-REM Update the script file if a new version exists
-copy /Y "%SCRIPT_DIR%\vid2text.py" "%TOOL_DIR%\vid2text.py"
+REM Remove the batch file from user's PATH
+if exist "%BATCH_FILE%" (
+    del "%BATCH_FILE%"
+    echo "Removed command: vid2text"
+)
 
-echo Update complete. vid2text is now up-to-date.
-
+echo "Uninstallation complete."
 endlocal

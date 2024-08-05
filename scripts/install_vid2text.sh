@@ -1,21 +1,15 @@
 #!/bin/bash
 
-# Function to check if script is running as root
-check_root() {
-  if [ "$EUID" -ne 0 ]; then
-    echo "Please run this script as root or use sudo."
-    exit 1
-  fi
-}
-
-# Check if the script is run as root
-check_root
+# Check if the script is running as root
+if [ "$EUID" -ne 0 ]; then
+  echo "Please run as root or use sudo."
+  exit 1
+fi
 
 # Define paths
 TOOL_DIR="$HOME/Videos/vid2text"
 VENV_DIR="$TOOL_DIR/venv"
 CONFIG_FILE="$TOOL_DIR/config.yml"
-SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
 SHELL_FILE="/usr/local/bin/vid2text"
 
 # Create necessary directories
@@ -26,20 +20,25 @@ python3 -m venv "$VENV_DIR"
 
 # Activate the virtual environment and install dependencies
 source "$VENV_DIR/bin/activate"
+pip install --upgrade pip
 pip install ffmpeg-python whisper pyyaml torch torchvision torchaudio
 
-# Copy the script to the tool directory
-cp "$SCRIPT_DIR/vid2text.py" "$TOOL_DIR/vid2text.py"
+# Copy the source code to the tool directory
+cp -r vid2text "$TOOL_DIR/"
 
 # Create config.yml with default paths
-echo "input_directory: \"$HOME/Videos/input_videos\"" > "$CONFIG_FILE"
-echo "output_directory: \"$TOOL_DIR/output\"" >> "$CONFIG_FILE"
-echo "db_path: \"$TOOL_DIR/vid2text.db\"" >> "$CONFIG_FILE"
+cat <<EOL > "$CONFIG_FILE"
+input_directory: "$HOME/Videos/input_videos"
+output_directory: "$TOOL_DIR/output"
+db_path: "$TOOL_DIR/vid2text.db"
+EOL
 
 # Create a shell wrapper in /usr/local/bin
-echo "#!/bin/bash" > "$SHELL_FILE"
-echo "source \"$VENV_DIR/bin/activate\"" >> "$SHELL_FILE"
-echo "python \"$TOOL_DIR/vid2text.py\" \"\$@\"" >> "$SHELL_FILE"
+cat <<EOL > "$SHELL_FILE"
+#!/bin/bash
+source "$VENV_DIR/bin/activate"
+python "$TOOL_DIR/vid2text/cli.py" "\$@"
+EOL
 chmod +x "$SHELL_FILE"
 
-echo "Installation complete. You can now use 'vid2text' command from the command line."
+echo "Installation complete. You can now use the 'vid2text' command."
